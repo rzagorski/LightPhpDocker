@@ -1,0 +1,53 @@
+version: '2'
+
+services:
+
+  nginx:
+    container_name: nginx
+    image: tutum/nginx
+    ports:
+      - 8080:80
+    links:
+      - phpfpm
+    volumes:
+      - ./nginx/default:/etc/nginx/sites-available/default
+      - ./nginx/default:/etc/nginx/sites-enabled/default
+      - ./logs/nginx-error.log:/var/log/nginx/error.log
+      - ./logs/nginx-access.log:/var/log/nginx/access.log
+
+  phpfpm:
+    container_name: phpfpm7-alpine
+    build:
+      context: .
+      dockerfile: dockerfile-php
+    links:
+      - redis
+    ports:
+      - 9000:9000
+    volumes:
+      - ./html:/usr/share/nginx/html
+
+  redis:
+    image: redis:alpine
+    ports:
+      - 6379:6379
+
+  mysql:
+    container_name: mysql
+    image: mysql:5.7
+    restart: always
+    ports:
+      - 3306:3306
+    volumes_from:
+      - appdata
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+
+  appdata:
+    container_name: db-data
+    image: busybox:latest
+    volumes:
+      - ./db_data:/var/lib/mysql
+
+volumes:
+  db-data:
