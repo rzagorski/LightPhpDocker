@@ -3,29 +3,31 @@ version: '2'
 services:
 
   nginx:
-    container_name: nginx
-    image: tutum/nginx
+    container_name: nginx_alpine
+    build:
+      context: .
+      dockerfile: dockerfile-nginx
+    depends_on:
+      - phpfpm
     ports:
       - 8080:80
     links:
       - phpfpm
     volumes:
-      - ./nginx/default:/etc/nginx/sites-available/default
-      - ./nginx/default:/etc/nginx/sites-enabled/default
-      - ./logs/nginx-error.log:/var/log/nginx/error.log
-      - ./logs/nginx-access.log:/var/log/nginx/access.log
+      - ./logs/nginx:/var/log/nginx
 
   phpfpm:
-    container_name: phpfpm7-alpine
+    container_name: phpfpm
     build:
       context: .
       dockerfile: dockerfile-php
     links:
       - redis
+      - mysql
     ports:
       - 9000:9000
     volumes:
-      - ./html:/usr/share/nginx/html
+      - ./www:/usr/share/nginx
 
   redis:
     image: redis:alpine
@@ -42,6 +44,16 @@ services:
       - appdata
     environment:
       MYSQL_ROOT_PASSWORD: example
+
+  linux:
+    container_name: linux
+    build:
+      context: .
+      dockerfile: dockerfile-linux
+    links:
+      - phpfpm
+    volumes:
+      - ./html:/usr/share/nginx/html
 
   appdata:
     container_name: db-data
